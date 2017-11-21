@@ -88,6 +88,9 @@ static mfrError_t mfrdata_getSamsungMfrSerializedDataDummy(mfrSerializedType_t m
 #include "vl_DFAST2_eval_header_v3_2.h"
 #endif
 
+#if defined(USE_SAM_MFR) || defined(USE_PACEXG1V3_MFR)
+static mfrError_t mfrdata_setFailureFlag( );
+#endif
 
 /*===================================================================
 FUNCTION: MFRData_Init
@@ -127,6 +130,12 @@ VL_MFR_API_RESULT MFRData_Init (void)
         {
             RDK_LOG(RDK_LOG_DEBUG,"%s: pace_mfr_init returned:%d\n", __FUNCTION__, nRet);
         }
+#if defined(USE_PACEXG1V3_MFR)
+        if( nRet != VL_MFR_API_RESULT_SUCCESS )
+        {
+            mfrdata_setFailureFlag( );
+        }
+#endif
 #elif defined(USE_INTEL_MFR)
         intel_mfr_init();
 
@@ -147,7 +156,7 @@ VL_MFR_API_RESULT MFRData_Init (void)
     }
 
     RDK_LOG(RDK_LOG_DEBUG,"LOG.RDK.SYS_MON_TOOLS","%s(): Exit\n", __FUNCTION__);
-    return (nRet);
+    return (VL_MFR_API_RESULT_SUCCESS); /*Always returning success due to issues in boot*/
 }
 
 VL_MFR_API_RESULT MFRData_getSerializedData_normalNvram(  VL_NORMAL_NVRAM_DATA_TYPE eType, VL_NVRAM_DATA * pNvRamData)
@@ -231,7 +240,7 @@ VL_MFR_API_RESULT MFRData_getSerializedData_secureNvram( VL_SECURE_NVRAM_DATA_TY
     return result;
 }
 
-#if defined(USE_SAM_MFR)
+#if defined(USE_SAM_MFR) || defined(USE_PACEXG1V3_MFR)
 
 #define MAX_MODELNAME_LEN 14
 /*
@@ -242,7 +251,7 @@ VL_MFR_API_RESULT MFRData_getSerializedData_secureNvram( VL_SECURE_NVRAM_DATA_TY
 ** Leaving this test code here in case required to debug DELIA-21795.
 **
 */
-static mfrError_t mfrdata_setFailureFlag(mfrSerializedType_t mfr_type, mfrSerializedData_t *data)
+static mfrError_t mfrdata_setFailureFlag( )
 {
     const char *DEVICE_PROPERTIES="/etc/device.properties";
     mfrError_t status = mfrERR_NONE;
@@ -326,8 +335,8 @@ mfrError_t MFRData_getSerializedMfrData(mfrSerializedType_t mfr_type, mfrSeriali
         status = mfrGetSerializedData( mfr_type, data);
         if( status != mfrERR_NONE ){
             RDK_LOG(RDK_LOG_DEBUG, "LOG.RDK.SYS_MON_TOOLS", "MFRData_getSerializedMfrData() failed \n");
-#if defined(USE_SAM_MFR)
-            status = mfrdata_setFailureFlag( mfr_type, data);
+#if defined(USE_SAM_MFR) || defined(USE_PACEXG1V3_MFR)
+            status = mfrdata_setFailureFlag( );
 #endif
         }
         else{
