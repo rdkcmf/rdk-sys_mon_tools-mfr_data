@@ -106,6 +106,10 @@ VL_MFR_API_RESULT MFRData_Init (void)
 {
     VL_MFR_API_RESULT nRet = VL_MFR_API_RESULT_SUCCESS;
     static int iMFRDatataInit = 0;
+#if defined(USE_PACEXG1V3_MFR)
+    FILE *fbootXreSplash = NULL;
+    const char *XRESPLASH_BOOTFPATH="/tmp/.xreSplashDrawn";
+#endif
 
     RDK_LOG(RDK_LOG_DEBUG, "LOG.RDK.SYS_MON_TOOLS", "....................MFR_Init() called....................\n");
 
@@ -130,12 +134,25 @@ VL_MFR_API_RESULT MFRData_Init (void)
         {
             RDK_LOG(RDK_LOG_DEBUG,"%s: pace_mfr_init returned:%d\n", __FUNCTION__, nRet);
         }
+
 #if defined(USE_PACEXG1V3_MFR)
-        if( nRet != VL_MFR_API_RESULT_SUCCESS )
+        /*
+        ** On boot SNMP-D certificate decryption is failing on boot due to mfr hook validation failure.
+        ** PaceXG1V3 mfr init is failing though API return success during boot time.
+        ** .xreSplashDrawn will be set on later part hence checking non-existance of file as workaround.
+        */
+        fbootXreSplash = fopen(XRESPLASH_BOOTFPATH, "r");
+        if((nRet != VL_MFR_API_RESULT_SUCCESS) || (fbootXreSplash == NULL))
         {
             mfrdata_setFailureFlag( );
         }
+        if(fbootXreSplash)
+        {
+            fclose(fbootXreSplash);
+            fbootXreSplash = NULL;
+        }
 #endif
+
 #elif defined(USE_INTEL_MFR)
         intel_mfr_init();
 
