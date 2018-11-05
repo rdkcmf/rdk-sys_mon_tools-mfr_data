@@ -1,0 +1,346 @@
+/*
+ * If not stated otherwise in this file or this component's Licenses.txt file the
+ * following copyright and licenses apply:
+ *
+ * Copyright 2017 RDK Management
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "sys_mfr_data.h"
+
+#define MAX_DATA_LEN 256
+#define MAX_SER_BUF 1280
+
+typedef struct _secNvramTest {
+	VL_SECURE_NVRAM_DATA_TYPE type;
+	char sValue[MAX_DATA_LEN];
+}secNvramTest;
+
+secNvramTest secNvramTypeValues[25] = 
+{
+	{VL_SECURE_NVRAM_DATA_NONE, "VL_SECURE_NVRAM_DATA_NONE"},
+	{VL_SECURE_NVRAM_DATA_CACP_HOST_ROOT_CERT, "VL_SECURE_NVRAM_DATA_CACP_HOST_ROOT_CERT"},
+	{VL_SECURE_NVRAM_DATA_CACP_HOST_MFR_CA_CERT,"VL_SECURE_NVRAM_DATA_CACP_HOST_MFR_CA_CERT"},
+	{VL_SECURE_NVRAM_DATA_CACP_HOST_DEV_CERT, "VL_SECURE_NVRAM_DATA_CACP_HOST_DEV_CERT"},
+	{VL_SECURE_NVRAM_DATA_CACP_HOST_DEV_PRIVATE_KEY, "VL_SECURE_NVRAM_DATA_CACP_HOST_DEV_PRIVATE_KEY"},
+	{VL_SECURE_NVRAM_DATA_CACP_DH_B_G1, "VL_SECURE_NVRAM_DATA_CACP_DH_B_G1"},
+	{VL_SECURE_NVRAM_DATA_CACP_DH_P_N1, "VL_SECURE_NVRAM_DATA_CACP_DH_P_N1"},
+	{VL_SECURE_NVRAM_DATA_CACP_DHKey, "VL_SECURE_NVRAM_DATA_CACP_DHKey"},
+	{VL_SECURE_NVRAM_DATA_CACP_AuthKeyH, "VL_SECURE_NVRAM_DATA_CACP_AuthKeyH"},
+	{VL_SECURE_NVRAM_DATA_COM_DWNLD_CL_CODE_VER_ROOT_CA, "VL_SECURE_NVRAM_DATA_COM_DWNLD_CL_CODE_VER_ROOT_CA" },
+	{VL_SECURE_NVRAM_DATA_COM_DWNLD_CL_CVC_CA, "VL_SECURE_NVRAM_DATA_COM_DWNLD_CL_CVC_CA"},
+	{VL_SECURE_NVRAM_DATA_COM_DWNLD_MFR_CVC, "VL_SECURE_NVRAM_DATA_COM_DWNLD_MFR_CVC"},
+	{VL_SECURE_NVRAM_DATA_COM_DWNLD_CVC_CA_PUB_KEY, "VL_SECURE_NVRAM_DATA_COM_DWNLD_CVC_CA_PUB_KEY"},
+	{VL_SECURE_NVRAM_DATA_APP_CL_APP_CVC_CA, "VL_SECURE_NVRAM_DATA_APP_CL_APP_CVC_CA"},
+	{VL_SECURE_NVRAM_DATA_APP_MAN_CVC, "VL_SECURE_NVRAM_DATA_APP_MAN_CVC"},
+	{VL_SECURE_NVRAM_DATA_SERIAL_NUMBER, "VL_SECURE_NVRAM_DATA_SERIAL_NUMBER"},
+	{VL_SECURE_NVRAM_DATA_IEEE1394_DTCP_CERT_KEYS, "VL_SECURE_NVRAM_DATA_IEEE1394_DTCP_CERT_KEYS"},
+	{VL_SECURE_NVRAM_DATA_IEEE1394_DTCP_SRM, "VL_SECURE_NVRAM_DATA_IEEE1394_DTCP_SRM"},
+	{VL_SECURE_NVRAM_DATA_IEEE1394_DTCP_SEED, "VL_SECURE_NVRAM_DATA_IEEE1394_DTCP_SEED"},
+	{VL_SECURE_NVRAM_DATA_VL_CERT_KEYS, "VL_SECURE_NVRAM_DATA_VL_CERT_KEYS"},
+	{VL_SECURE_NVRAM_DATA_DVR_CRYPTO_KEY, "VL_SECURE_NVRAM_DATA_DVR_CRYPTO_KEY"},
+	{VL_SECURE_NVRAM_DATA_INVALID, "VL_SECURE_NVRAM_DATA_INVALID"}
+};
+
+typedef struct _noramalNvramTest {
+	VL_NORMAL_NVRAM_DATA_TYPE type;
+	char sValue[MAX_DATA_LEN];
+}normalNvramTest;
+
+normalNvramTest normalNvramTypeValues[] =
+{
+ {VL_NORMAL_NVRAM_DATA_NONE, "VL_NORMAL_NVRAM_DATA_NONE"},
+ {VL_NORMAL_NVRAM_DATA_PREVIOUS_IMAGE_NAME, "VL_NORMAL_NVRAM_DATA_PREVIOUS_IMAGE_NAME"},
+ {VL_NORMAL_NVRAM_DATA_BOOT_IMAGE_NAME, "VL_NORMAL_NVRAM_DATA_BOOT_IMAGE_NAME"},
+ {VL_NORMAL_NVRAM_DATA_UPGRADE_IMAGE_NAME, "VL_NORMAL_NVRAM_DATA_UPGRADE_IMAGE_NAME"},
+ {VL_NORMAL_NVRAM_DATA_BOOT_FIRMWARE_IMAGE_NAME, "VL_NORMAL_NVRAM_DATA_BOOT_FIRMWARE_IMAGE_NAME"},
+ {VL_NORMAL_NVRAM_DATA_BOOT_APPLICATION_IMAGE_NAME, "VL_NORMAL_NVRAM_DATA_BOOT_APPLICATION_IMAGE_NAME"},
+ {VL_NORMAL_NVRAM_DATA_BOOT_DATA_IMAGE_NAME, "VL_NORMAL_NVRAM_DATA_BOOT_DATA_IMAGE_NAME"},
+ {VL_NORMAL_NVRAM_DATA_UPGRADE_FIRMWARE_IMAGE_NAME, "VL_NORMAL_NVRAM_DATA_UPGRADE_FIRMWARE_IMAGE_NAME"},
+ {VL_NORMAL_NVRAM_DATA_UPGRADE_APPLICATION_IMAGE_NAME, "VL_NORMAL_NVRAM_DATA_UPGRADE_APPLICATION_IMAGE_NAME"},
+ {VL_NORMAL_NVRAM_DATA_UPGRADE_DATA_IMAGE_NAME, "VL_NORMAL_NVRAM_DATA_UPGRADE_DATA_IMAGE_NAME"},
+ {VL_NORMAL_NVRAM_DATA_CACP_AuthStatus, "VL_NORMAL_NVRAM_DATA_CACP_AuthStatus"},
+ {VL_NORMAL_NVRAM_DATA_CACP_HostId, "VL_NORMAL_NVRAM_DATA_CACP_HostId"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNLD_MFR_NAME, "VL_NORMAL_NVRAM_DATA_COM_DWNLD_MFR_NAME"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNLD_CO_SIGN_NAME, "VL_NORMAL_NVRAM_DATA_COM_DWNLD_CO_SIGN_NAME"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNL_VEN_ID, "VL_NORMAL_NVRAM_DATA_COM_DWNL_VEN_ID"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNL_HW_ID, "VL_NORMAL_NVRAM_DATA_COM_DWNL_HW_ID"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNL_MFR_CODE_ACC_STR_TIME, "VL_NORMAL_NVRAM_DATA_COM_DWNL_MFR_CODE_ACC_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNL_CO_SIGN_CODE_ACC_STR_TIME, "VL_NORMAL_NVRAM_DATA_COM_DWNL_CO_SIGN_CODE_ACC_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNL_MFR_CVC_ACC_STR_TIME, "VL_NORMAL_NVRAM_DATA_COM_DWNL_MFR_CVC_ACC_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNL_CO_SIGN_CVC_ACC_STR_TIME, "VL_NORMAL_NVRAM_DATA_COM_DWNL_CO_SIGN_CVC_ACC_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNLD_MGR_STATUS, "VL_NORMAL_NVRAM_DATA_COM_DWNLD_MGR_STATUS"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNLD_SNMP_DL_PARAMS, "VL_NORMAL_NVRAM_DATA_COM_DWNLD_SNMP_DL_PARAMS"},
+ {VL_NORMAL_NVRAM_DATA_COM_DWNLD_GROUP_ID, "VL_NORMAL_NVRAM_DATA_COM_DWNLD_GROUP_ID"},
+ {VL_NORMAL_NVRAM_DATA_CDL_MFR_CODE_ACC_UPG_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_MFR_CODE_ACC_UPG_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_CO_SIGN_CODE_ACC_UPG_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_CO_SIGN_CODE_ACC_UPG_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_COM_SNMP_IANA_NUMBER, "VL_NORMAL_NVRAM_DATA_COM_SNMP_IANA_NUMBER"},
+ {VL_NORMAL_NVRAM_DATA_COM_ECM_CVC_DIGEST, "VL_NORMAL_NVRAM_DATA_COM_ECM_CVC_DIGEST"},
+ {VL_NORMAL_NVRAM_DATA_CDL_FW_MFR_CODE_ACC_UPG_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_FW_MFR_CODE_ACC_UPG_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_FW_CO_SIGN_CODE_ACC_UPG_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_FW_CO_SIGN_CODE_ACC_UPG_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_APP_MFR_CODE_ACC_UPG_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_APP_MFR_CODE_ACC_UPG_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_APP_CO_SIGN_CODE_ACC_UPG_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_APP_CO_SIGN_CODE_ACC_UPG_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_DATA_MFR_CODE_ACC_UPG_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_DATA_MFR_CODE_ACC_UPG_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_DATA_CO_SIGN_CODE_ACC_UPG_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_DATA_CO_SIGN_CODE_ACC_UPG_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_FW_MFR_CODE_ACC_BOOT_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_FW_MFR_CODE_ACC_BOOT_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_FW_CO_SIGN_CODE_ACC_BOOT_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_FW_CO_SIGN_CODE_ACC_BOOT_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_APP_MFR_CODE_ACC_BOOT_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_APP_MFR_CODE_ACC_BOOT_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_APP_CO_SIGN_CODE_ACC_BOOT_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_APP_CO_SIGN_CODE_ACC_BOOT_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_DATA_MFR_CODE_ACC_BOOT_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_DATA_MFR_CODE_ACC_BOOT_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_CDL_DATA_CO_SIGN_CODE_ACC_BOOT_STR_TIME, "VL_NORMAL_NVRAM_DATA_CDL_DATA_CO_SIGN_CODE_ACC_BOOT_STR_TIME"},
+ {VL_NORMAL_NVRAM_DATA_IEEE1394_DTCP_KEY_TYPE, "VL_NORMAL_NVRAM_DATA_IEEE1394_DTCP_KEY_TYPE"},
+ {VL_NORMAL_NVRAM_DATA_IEEE1394_DTCP_KEY_STATUS, "VL_NORMAL_NVRAM_DATA_IEEE1394_DTCP_KEY_STATUS"},
+ {VL_NORMAL_NVRAM_DATA_SERIAL_NUMBER, "VL_NORMAL_NVRAM_DATA_SERIAL_NUMBER"},
+ {VL_NORMAL_NVRAM_DATA_INVALID, "VL_NORMAL_NVRAM_DATA_INVALID"}
+};
+
+
+typedef struct _nvramTestRet {
+	VL_MFR_API_RESULT returnVal;
+	char sValue[MAX_DATA_LEN];
+}nvramTestRet;
+
+nvramTestRet nvramTestApiRet[] =
+{
+  {VL_MFR_API_RESULT_SUCCESS, "VL_MFR_API_RESULT_SUCCESS"},
+  {VL_MFR_API_RESULT_FAILED, "VL_MFR_API_RESULT_FAILED"},
+  {VL_MFR_API_RESULT_CHECK_ERRNO, "VL_MFR_API_RESULT_CHECK_ERRNO"},
+  {VL_MFR_API_RESULT_UNSPECIFIED_ERROR, "VL_MFR_API_RESULT_UNSPECIFIED_ERROR"},
+  {VL_MFR_API_RESULT_ACCESS_DENIED, "VL_MFR_API_RESULT_ACCESS_DENIED"},
+  {VL_MFR_API_RESULT_NOT_IMPLEMENTED, "VL_MFR_API_RESULT_NOT_IMPLEMENTED"},
+  {VL_MFR_API_RESULT_NOT_EXISTING, "VL_MFR_API_RESULT_NOT_EXISTING"},
+  {VL_MFR_API_RESULT_NULL_PARAM, "VL_MFR_API_RESULT_NULL_PARAM"},
+  {VL_MFR_API_RESULT_INVALID_PARAM, "VL_MFR_API_RESULT_INVALID_PARAM"},
+  {VL_MFR_API_RESULT_OUT_OF_RANGE, "VL_MFR_API_RESULT_OUT_OF_RANGE"},
+  {VL_MFR_API_RESULT_OPEN_FAILED, "VL_MFR_API_RESULT_OPEN_FAILED"},
+  {VL_MFR_API_RESULT_READ_FAILED, "VL_MFR_API_RESULT_READ_FAILED"},
+  {VL_MFR_API_RESULT_WRITE_FAILED, "VL_MFR_API_RESULT_WRITE_FAILED"},
+  {VL_MFR_API_RESULT_MALLOC_FAILED, "VL_MFR_API_RESULT_MALLOC_FAILED"},
+  {VL_MFR_API_RESULT_ENCRYPTION_FAILED, "VL_MFR_API_RESULT_ENCRYPTION_FAILED"},
+  {VL_MFR_API_RESULT_DECRYPTION_FAILED, "VL_MFR_API_RESULT_DECRYPTION_FAILED"},
+  {VL_MFR_API_RESULT_NULL_KEY, "VL_MFR_API_RESULT_NULL_KEY"},
+  {VL_MFR_API_RESULT_INVALID_KEY_LENGTH, "VL_MFR_API_RESULT_INVALID_KEY_LENGTH"},
+  {VL_MFR_API_RESULT_INVALID_BUFFER_LENGTH, "VL_MFR_API_RESULT_INVALID_BUFFER_LENGTH"},
+  {VL_MFR_API_RESULT_SIZE_MISMATCH, "VL_MFR_API_RESULT_SIZE_MISMATCH"},
+  {VL_MFR_API_RESULT_DATA_MISMATCH, "VL_MFR_API_RESULT_DATA_MISMATCH"}
+};
+
+char* strNvramTstRetValue(mfrError_t mfrRetVal)
+{
+	int count=0;
+
+	for(count=0; count <(sizeof(nvramTestApiRet)/sizeof(nvramTestRet)); count++ )
+	{
+		if(mfrRetVal == nvramTestApiRet[count].returnVal )
+		{
+			return nvramTestApiRet[count].sValue;
+		}
+	}
+
+}
+
+
+typedef struct _mfrtest {
+	mfrSerializedType_t type;
+	char sValue[MAX_DATA_LEN];
+}mfrtest;
+
+mfrtest mfrTestTypeValus[ ] =
+{
+ { mfrSERIALIZED_TYPE_MANUFACTURER, "mfrSERIALIZED_TYPE_MANUFACTURER"},
+ { mfrSERIALIZED_TYPE_MANUFACTUREROUI, "mfrSERIALIZED_TYPE_MANUFACTUREROUI"},
+ { mfrSERIALIZED_TYPE_MODELNAME, "mfrSERIALIZED_TYPE_MODELNAME"},
+ { mfrSERIALIZED_TYPE_DESCRIPTION, "mfrSERIALIZED_TYPE_DESCRIPTION"},
+ { mfrSERIALIZED_TYPE_PRODUCTCLASS, "mfrSERIALIZED_TYPE_PRODUCTCLASS"},
+ { mfrSERIALIZED_TYPE_SERIALNUMBER, "mfrSERIALIZED_TYPE_SERIALNUMBER"},
+ { mfrSERIALIZED_TYPE_HARDWAREVERSION, "mfrSERIALIZED_TYPE_HARDWAREVERSION"},
+ { mfrSERIALIZED_TYPE_SOFTWAREVERSION, "mfrSERIALIZED_TYPE_SOFTWAREVERSION"},
+ { mfrSERIALIZED_TYPE_PROVISIONINGCODE, "mfrSERIALIZED_TYPE_PROVISIONINGCODE"},
+ { mfrSERIALIZED_TYPE_FIRSTUSEDATE, "mfrSERIALIZED_TYPE_FIRSTUSEDATE"},
+ { mfrSERIALIZED_TYPE_DEVICEMAC, "mfrSERIALIZED_TYPE_DEVICEMAC"},
+ { mfrSERIALIZED_TYPE_MOCAMAC, "mfrSERIALIZED_TYPE_MOCAMAC"},
+ { mfrSERIALIZED_TYPE_HDMIHDCP, "mfrSERIALIZED_TYPE_HDMIHDCP"},
+#if defined(HDCP_2X_SUPPORT)
+ { mfrSERIALIZED_TYPE_HDMIHDCP_2_2, "mfrSERIALIZED_TYPE_HDMIHDCP_2_2"},
+ { mfrSERIALIZED_TYPE_HDMIHDCP_2_2_LEN, "mfrSERIALIZED_TYPE_HDMIHDCP_2_2_LEN"},
+#endif
+ { mfrSERIALIZED_TYPE_PDRIVERSION, "mfrSERIALIZED_TYPE_PDRIVERSION"},
+#if defined(PACE_PLATFORM_7445_L3)
+ { mfrSERIALIZED_TYPE_CMMAC, "mfrSERIALIZED_TYPE_CMMAC"},
+ { mfrSERIALIZED_TYPE_ESTBMAC, "mfrSERIALIZED_TYPE_ESTBMAC"},
+#endif
+#if defined(PACE_PLATFORM_7445_L3) || defined(PACE_PLATFORM_7448_L3) || defined(PACE_PLATFORM_7448_ESP)
+ { mfrSERIALIZED_TYPE_DRM_WIDEVINE, "mfrSERIALIZED_TYPE_DRM_WIDEVINE"},
+ { mfrSERIALIZED_TYPE_DRM_PLAYREADY, "mfrSERIALIZED_TYPE_DRM_PLAYREADY"},
+ { mfrSERIALIZED_TYPE_DRM_NETFLIX, "mfrSERIALIZED_TYPE_DRM_NETFLIX"},
+ { mfrSERIALIZED_TYPE_DRM_SSL, "mfrSERIALIZED_TYPE_DRM_SSL"},
+ { mfrSERIALIZED_TYPE_SSL_CERT, "mfrSERIALIZED_TYPE_SSL_CERT"},
+#endif
+ { mfrSERIALIZED_TYPE_MAX, "mfrSERIALIZED_TYPE_MAX"}
+};
+
+typedef struct _mfrTestRet {
+	mfrError_t mfrRetVal;
+	char sValue[MAX_DATA_LEN];
+}mfrTestRet;
+
+mfrTestRet mfrApiRet[ ] =
+{
+  { mfrERR_NONE, "mfrERR_NONE"},
+  { mfrERR_GENERAL, "mfrERR_GENERAL"},
+  { mfrERR_INVALID_PARAM, "mfrERR_INVALID_PARAM"},
+  { mfrERR_INVALID_STATE, "mfrERR_INVALID_STATE"},
+  { mfrERR_OPERATION_NOT_SUPPORTED, "mfrERR_OPERATION_NOT_SUPPORTED"},
+  { mfrERR_UNKNOWN, "mfrERR_UNKNOWN"},
+};
+
+char* strMfrTstRetValue(mfrError_t mfrRetVal)
+{
+	int count=0;
+
+	for(count=0; count < (sizeof(mfrApiRet)/sizeof(mfrtest)); count++ )
+	{
+		if(mfrRetVal == mfrApiRet[count].mfrRetVal )
+		{
+			 return mfrApiRet[count].sValue;
+		}
+	}
+
+}
+
+void printHelpTestHelp() 
+{
+	printf("Usage <> \n");
+	printf("mfrTester 1 --> Run Secure NVRAM API Test \n");
+	printf("mfrTester 2 --> Run Noraml NVRAM API Test \n");
+	printf("mfrTester 3 --> Run mfrData API Test");
+	printf("Usage 1...3 \n");
+}
+
+int main()
+{
+	int count=0;
+	/*MFR*/
+	VL_MFR_API_RESULT nRet = VL_MFR_API_RESULT_SUCCESS;
+	mfrError_t mfRetValue1 = mfrERR_NONE;
+	mfrSerializedData_t mfrDatRetrieved1;
+	/*SEC NVRAM*/
+	VL_NVRAM_DATA securedNvRamData1;
+	VL_NVRAM_DATA normalNvRamData1;
+	char mfrDataTstStr[MAX_SER_BUF];
+	
+	nRet = MFRData_Init();
+	printf("*************** MFR API DATA INIT ********************** \n");
+	printf("INITIALIZING MFR, Returned[%s] Interger[%d] **\n", strNvramTstRetValue(nRet), nRet);
+
+
+	printf("\n\n*************** MFR API TEST STARTS ********************** \n");
+	for( count=0; count < (sizeof(mfrTestTypeValus)/sizeof(mfrtest)); count++ )
+	{
+		memset(mfrDataTstStr, 0, sizeof(mfrDataTstStr));
+		memset(&mfrDatRetrieved1, 0, sizeof(mfrSerializedData_t));
+		mfRetValue1 = MFRData_getSerializedMfrData(mfrTestTypeValus[count].type, &mfrDatRetrieved1);
+		if ( mfRetValue1  == mfrERR_NONE && mfrDatRetrieved1.buf != NULL && mfrDatRetrieved1.bufLen > 0 && mfrDatRetrieved1.bufLen <= MAX_SER_BUF )
+		{
+			memcpy(mfrDataTstStr, mfrDatRetrieved1.buf, ((mfrDatRetrieved1.bufLen < MAX_SER_BUF-1) ? mfrDatRetrieved1.bufLen : MAX_SER_BUF-1) );
+		}
+		printf("%d) MFRDATA Fetching %s, Returned[%s(%X)] ", count+1, mfrTestTypeValus[count].sValue, strMfrTstRetValue(mfRetValue1), mfRetValue1);
+		if(mfRetValue1 == mfrERR_NONE)
+		{
+			if(strlen(mfrDataTstStr) > 1)
+			{
+				printf("  Value[ %s ] *** \n", mfrDataTstStr);
+			}else
+			{
+				printf("  Value[ Data =<1byte] *** \n");
+			}
+		}else
+		{
+			printf(" MFR API CALL NOT SUCCESS ***** \n");
+		}
+		
+		if((mfrDatRetrieved1.freeBuf != NULL) && (mfrDatRetrieved1.buf != NULL) )
+		{
+			mfrDatRetrieved1.freeBuf( mfrDatRetrieved1.buf );
+			mfrDatRetrieved1.buf = NULL;
+		}
+		mfRetValue1 = mfrERR_NONE;
+	}
+	printf("*************** MFR API TEST ENDS ********************** \n");
+
+	printf("\n\n***************  Secure NVARAM test Starts ***************  \n");
+	for( count=0; count < (sizeof(secNvramTypeValues)/sizeof(secNvramTest)); count++ )
+	{
+		memset(mfrDataTstStr, 0, sizeof(mfrDataTstStr));
+		memset(&securedNvRamData1, 0, sizeof(VL_NVRAM_DATA));
+		nRet = MFRData_getSerializedData_secureNvram(secNvramTypeValues[count].type, &securedNvRamData1);
+		if ( (nRet == VL_MFR_API_RESULT_SUCCESS) && (securedNvRamData1.pData != NULL) )
+		{
+			memcpy(mfrDataTstStr, securedNvRamData1.pData, ((securedNvRamData1.nBytes < MAX_SER_BUF-1) ? securedNvRamData1.nBytes : MAX_SER_BUF-1) );
+		}
+		printf("%d) MFRDATA Fetching %s, Returned[%s(%X)] ", count+1, secNvramTypeValues[count].sValue, strNvramTstRetValue(nRet), nRet);
+		if(nRet == VL_MFR_API_RESULT_SUCCESS)
+		{
+			if(strlen(mfrDataTstStr) > 1)
+			{
+				printf("  SecNvramValue[%s]  ***   \n", mfrDataTstStr);
+			}else
+			{
+				printf(" [ SecNvramValue Data =<1byte ]*** \n");
+			}
+		}
+		else{
+			printf(" [SEC NVRAM API CALL NOT SUCCESS] ***   \n");
+		}
+		nRet = VL_MFR_API_RESULT_SUCCESS;	
+	}
+	memset(&securedNvRamData1, 0, sizeof(VL_NVRAM_DATA));
+	printf("***************  Secure NVARAM test Ends ***************  \n");
+
+	printf("\n\n***************  Normal NVARAM test Starts ***************  \n");
+	for( count=0; count < (sizeof(normalNvramTypeValues)/sizeof(normalNvramTest)); count++ )
+	{
+		memset(mfrDataTstStr, 0, sizeof(mfrDataTstStr));
+		memset(&normalNvRamData1, 0, sizeof(VL_NVRAM_DATA));
+		nRet = MFRData_getSerializedData_normalNvram(normalNvramTypeValues[count].type, &normalNvRamData1);
+		if ( (nRet == VL_MFR_API_RESULT_SUCCESS) && (normalNvRamData1.pData != NULL) )
+		{
+			memcpy(mfrDataTstStr, normalNvRamData1.pData, ((normalNvRamData1.nBytes < MAX_SER_BUF-1) ? normalNvRamData1.nBytes : MAX_SER_BUF-1) );
+		}
+		printf("%d) MFRDATA Fetching %s, Returned[%s(%X)]  ", count+1, normalNvramTypeValues[count].sValue, strNvramTstRetValue(nRet), nRet);
+		if(nRet == VL_MFR_API_RESULT_SUCCESS)
+		{
+			if(strlen(mfrDataTstStr) > 1)
+			{
+				printf("  NormalNvramValue[%s]  ***   \n", mfrDataTstStr);
+			}else
+			{
+				printf(" [ NormalNvramValue Data =<1byte ]*** \n");
+			}
+		}
+		else{
+			printf(" NORAMAL NVRAM API CALL NOT SUCCESS ***  \n");
+		}
+		nRet = VL_MFR_API_RESULT_SUCCESS;	
+	}
+	memset(&normalNvRamData1, 0, sizeof(VL_NVRAM_DATA));
+	printf("***************  Noramal NVARAM test Ends ***************  \n");
+
+
+}
+
+
